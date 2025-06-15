@@ -58,7 +58,7 @@ def trois_coloration(sommets: list[str], arcs: list[tuple[str, str]], couleurs: 
     # python tp2.py > tp2.cnf
 
 
-def solution_lisible(solution: str, correspondances: dict[str:int]) -> str:
+def solution_lisible(solution: str, correspondances: dict[str, int]) -> str:
     solution = solution.strip().split(" ")
     msg = []
     dico = {v: k for k, v in correspondances.items()}  # inverse le dico
@@ -74,8 +74,8 @@ couleurs = ["R", "V", "B"]
 
 if __name__ == "__main__":
     dimacs, som = trois_coloration(sommets, arcs, couleurs)
-    with open("colorer2.cnf", "w") as f:
-        f.write(dimacs)
+    # with open("colorer2.cnf", "w") as f:
+    #     f.write(dimacs)
 
     solution = "-1 -2 3 -4 5 -6 7 -8 -9 0"
     print("les couleurs sont : ", solution_lisible(solution, som))
