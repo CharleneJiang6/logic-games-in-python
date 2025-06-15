@@ -1,3 +1,5 @@
+c $HOME/go/bin/gophersat licorne.cnf
+c
 c TP2 Exercice Licorne
 c
 c 1 mythique, 2 mortel, 3 mammifere, 4 corne, 5 magique
