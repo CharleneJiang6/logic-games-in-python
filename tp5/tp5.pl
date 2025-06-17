@@ -79,7 +79,7 @@ play(Solution, 0) :-
 play(Solution, NbCoups) :-
     NbCoups > 0,
     write('Il reste '), write(NbCoups), write(' coup(s).'), nl,
-    write('Donner un code : '), read(Code), nl,
+    write('Donner un code : '), nl, read(Code), nl,
     nBienPlace(Solution, Code, BP),
     nMalPlaces(Solution, Code, MP),
     write('BP : '), write(BP),
