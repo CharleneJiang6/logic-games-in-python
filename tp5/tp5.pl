@@ -6,8 +6,8 @@ nBienPlace([A1|B1],[A2|B2],N):-
 	A1 \= A2,
 	nBienPlace(B1,B2,N).
 
-%gagne(A,B):-A=B.
-%gagne(C,C).
+/*gagne(A,B):-A=B. */
+/*gagne(C,C). */
 
 longueur([],0).
 longueur([_|R],N):-
@@ -19,7 +19,9 @@ gagne(C1,C2):-
     longueur(C1,N),
     longueur(C2,N).
 
-%element(_, []). %ca signifie que tout app. []
+/*element(_, []). */
+/*ca signifie que tout app. [] */
+
 element(X,[X|_]).
 element(X,[T|R]):-
     X\=T,
@@ -31,32 +33,32 @@ enleve(A,[T|B],[T|C]):-
     A\=T,
     enleve(A,B,C).
 
-% si meme tete, alors ne pas garder la tete
-% si non, garder les tetes diff dans les resultats
+/* si meme tete, alors ne pas garder la tete
+si non, garder les tetes diff dans les resultats */
 enleveBP([],[],[],[]).
 enleveBP([T|R1],[T|R2],C1,C2):-
     enleveBP(R1,R2,C1,C2).
 enleveBP([T1|R1],[T2|R2],[T1|C1],[T2|C2]):-
-    T1\=T2, %donne juste une solution
+    T1\=T2, /*donne juste une solution */
     enleveBP(R1,R2,C1,C2).
 
 nMalPlacesAux([],_,0).
 
-% si la tete est un elm du code2, on incremente compteur
+/* si la tete est un elm du code2, on incremente compteur */
 nMalPlacesAux([X|R1],C,N):-
     element(X,C),
     enleve(X,C,C2),
     nMalPlacesAux(R1,C2,M),
     N is M+1.
 
-% si la tete n'est pas un elm du code 2, on ignore
+/* si la tete n'est pas un elm du code 2, on ignore */
 nMalPlacesAux([A|R1],C,N):-
     \+element(A,C),
     nMalPlacesAux(R1,C,N).
 
 nMalPlaces([],_,0).
 nMalPlaces(X,Y,N):-
-    enleveBP(X,Y,C1,C2), %pour avoir que les elm mal places
+    enleveBP(X,Y,C1,C2), /*pour avoir que les elm mal places */
     nMalPlacesAux(C1,C2,N).
 
 codeur(_,0,[]).
@@ -66,14 +68,14 @@ codeur(M, N, [T|R]) :-
     N1 is N - 1,
     codeur(M, N1, R).
 
-% JOUER %
+/* JOUER */
 
-% 0 coup restant
+/* 0 coup restant */
 play(Solution, 0) :-
     write('Perdu ! La solution etait : '),
     write(Solution), nl.
 
-% Clause récursive : encore des coups restants
+/* encore des coups restants */
 play(Solution, NbCoups) :-
     NbCoups > 0,
     write('Il reste '), write(NbCoups), write(' coup(s).'), nl,
@@ -83,10 +85,10 @@ play(Solution, NbCoups) :-
     write('BP : '), write(BP),
     write('/MP: '), write(MP), nl,
     longueur(Solution, N),
-    ( BP =:= N ->    % if
+    ( BP =:= N ->    /* if */
         write('Gagné !'), nl
     ;
-        NbCoupsRestant is NbCoups - 1, % else
+        NbCoupsRestant is NbCoups - 1, /* else */
         play(Solution, NbCoupsRestant)
     ).
 
