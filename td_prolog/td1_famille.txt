@@ -1,0 +1,48 @@
+%[TD1 prolog / RE]
+
+%homme/1, femme/1, parent/2, couple/2
+
+pere(X,Y):- homme(X), parent(X,Y).
+mere(X,Y):- femme(X), parent(X,Y).
+epoux(X,Y):- homme(X), couple(X,Y).
+epouse(X,Y):- femme(X), couple(X,Y).
+fils(X,Y):- homme(X), parent(Y,X).
+fille(X,Y):- femme(X), parent(Y,X).
+enfant(X,Y):- parent(Y, X).
+
+grandPere(X,Y):- homme(X), pere(X,Z), parent(Z,Y).
+grandMere(X,Y):- femme(X), mere(X,Z), parent(Z,Y).
+grandParent(X,Y):- parent(X,Z), parent(Z,Y).
+petitFils(X,Y):- homme(X), grandParent(Y,X).
+petiteFille(X,Y):- femme(X), grandParent(Y,X).
+memePere(X,Y):- pere(Z,X), pere(Z,Y), X\=Y.
+memeMere(X,Y):- mere(Z,X), mere(Z,Y), X\=Y.
+memeParent(X,Y):- memePere(X,Y).
+memeParent(X,Y):- memeMere(X,Y).
+memeParents(X,Y):- memePere(X,Y), memeMere(X,Y).
+frere(X,Y):- homme(X), memeParent(X,Y).
+soeur(X,Y):- femme(X), memeParent(X,Y).
+
+
+demiFrere(X,Y):- homme(X), memeParent(X,Y), \+memeParents(X,Y).
+demiSoeur(X,Y):- femme(X), memeParent(X,Y), \+memeParents(X,Y).
+oncle(X,Y):- frere(X,Z), parent(Z,Y).
+tante(X,Y):- soeur(X,Z), parent(Z,Y).
+neveu(X,Y):- fils(X,Z), frere(Z,Y).
+neveu(X,Y):- fils(X,Z), soeur(Z,Y).
+niece(X,Y):- fille(X,Z), frere(Z,Y).
+niece(X,Y):- fille(X,Z), soeur(Z,Y).
+cousin(X,Y):- homme(X), parent(Z,X), parent(Q,Y), memeParent(Z,Q), Z\=Q.
+cousine(X,Y):- femme(X), parent(Z,X), parent(Q,Y), memeParent(Z,Q), Z\=Q.
+gendre(X,Y):- homme(X), couple(X,Z), enfant(Z,Y). %mon enfant a un mari
+bru(X,Y):- femme(X), couple(X,Z), enfant(Z,Y). %mon enfant a une epouse
+maratre(X,Y):- femme(X), couple(X,Z), pere(Z,Y), \+mere(X,Y). %后妈
+belleMere(X,Y):- mere(X,Z), couple(Z,Y).
+beauPere(X,Y):- pere(X,Z), couple(Z,Y).
+
+ascendant(X,Y):- parent(X,Y). %recursivite: cas de base
+ascendant(X,Y):- parent(X,Z), ascendant(Z,Y). %recursion
+descendant(X,Y):- ascendant(Y,X).
+lignee(X,Y) :- ascendant(X,Y). %mm sang
+lignee(X,Y) :- ascendant(Y,X).
+parente(X,Y) :- ascendant(Z,X), ascendant(Z,Y), X \= Y. %ascendant commun

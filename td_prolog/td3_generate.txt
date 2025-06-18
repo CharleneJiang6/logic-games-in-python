@@ -1,0 +1,102 @@
+[TD3_prolog]: generate & test
+
+[ex1]
+
+chiffre(X):- element(X, [0,1,2,3,4,5,6,7,8,9]).
+
+test(X,Y,Z):- 
+	Z is X + Y.
+
+generate(X,Y):- chiffre(X), chiffre(Y), X\=Y.
+
+
+solve(X,Y,Z):-
+	generate(X,Y),
+	test(X,Y,Z).
+
+
+
+
+[ex2]
+% M1 M2 M3
+% color of Mi ? => generate_colors 
+% natio de Mi ? => generate_naatios
+
+all_diff([]).
+all_diff([H|T]) :-
+	\+ member(H, T),
+	all_diff(T).
+
+color(X) :- element(X, [bleu, vert, rouge]).  OU coder les 3 faits: color(rouge).
+
+natio(X) :- element(X, [italien, norvegien, espagnol]).
+
+% generer des listes
+generate_color(A) :- color(X), color(Y), color(Z), X\=Y, Y\=Z, X\=Z, A = [X,Y,Z].
+generate_natio(A) :- natio(X), natio(Y), natio(Z), X\=Y, Y\=Z, X\=Z, A = [X,Y,Z].
+
+indice1(L):- 
+
+solve([M1, M2, M3]):-
+	generate_color(C),
+	generate_natio(N),
+	
+	C = [C1, C2, C3],
+	all_diff(C1, C2, C3),
+	
+	N = [N1,N2,N3],
+	all_diff(N1,N2,N3),
+
+	N2 = italien,
+	
+	N2 = espagnol, N3 = espagnol,
+	M1 = rouge, M2 = rouge,
+	
+	N1 = norvegien, M1 = bleu.
+
+
+
+[ex2: cor]
+% enleve indice 3 reste 2 solutions
+% une liste de 3 maisons
+
+% MAISON EST UN TERME FONCTIONNEL MAIS PAS UN PREDIACT, MAIS ON PEUT L UNIFIER AVEC D AUTRES TERMES FONCTIONNELS
+
+% les indices 1, 2, 3 sont un peu inutiles, possible juste couple (X,Y)
+generate([maison(1,X1,Y1), maison(2,X2,Y2),maison(3,X3,Y3)]) :-
+	natio(X1), natio(X2), natio(X3),
+	color(Y1), color(Y2), color(Y3).
+
+color(bleu).
+color(rouge).
+color(vert).
+natio(norvegien).
+natio(italien).
+natio(espagnol).
+
+regle1( [maison(1,X1,Y1), maison(2,X2,Y2),maison(3,X3,Y3)] ) :-
+	dif(Y1,Y2), dif(Y2,Y3), dif(Y1,Y3).
+
+regle2( [maison(1,X1,Y1), maison(2,X2,Y2),maison(3,X3,Y3)] ) :-
+	dif(X1,X2), dif(X2,X3), dif(X1,X3).
+
+indice1(L):-
+	member(maison(N1,_,rouge),L),
+	member(maison(N2,espagnol,_),L),
+	N2 is N1+1. % a droite de l'autre
+
+indice2(L):- member(maison(_,norvegien, bleu),L).
+
+indice3(L):- member(maison(2,italien,_),L).
+
+% faire une liste de maison
+solve(L):-
+	generate(L),
+	test(L).
+
+test(L):- 
+	regle1(L),
+	regle2(L),
+	indice1(L),
+	indice2(L),
+	indice3(L).

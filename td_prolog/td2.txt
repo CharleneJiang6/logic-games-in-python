@@ -1,0 +1,82 @@
+tete([T|_], T).
+reste([_|R],R).
+vide([]).
+
+element(T,[T|_]).
+element(E,[T|L]):- E\=T, element(E,L).
+
+dernier([T|[]], T).
+dernier([_|R],X) :- dernier(R,X).
+
+len([],0).
+len([_|R], N):- len(R,M), N is M+1.
+
+occ([], _, 0).
+occ([T|R], T, N) :- occ(R,T,M), N is M+1.
+occ([T|R], X, N):- T\=X, occ(R,X,N).
+
+concat([],L,L).
+concat([A1|B1], L, [A1|Tmp]) :- concat(B1, L, Tmp).
+
+inverse([_],[_]).
+inverse([T|R],V):- inverse(R,Q), append(Q,[T],V).
+
+% [1,2] et ss_liste de [3,1,2] eg.
+ss_liste([],_).
+ss_liste([T|R], [T|V]) :- ss_liste(R,V).
+ss_liste([T|R], [Q|V]) :- T\=Q, ss_liste([T|R],V).
+%TODO : pq la cor ecrit plein de definition??
+
+
+retire_elm([],_,[]).
+retire_elm([T|R],T,R).
+retire_elm([H|F],X,[H|R]):- 
+	H\=X, 
+	retire_elm(F,X,R).
+
+
+retire_elms([],_,[]).
+retire_elms([X|R],X,[X|L2]):-
+	retire_elms(R,X,L2).
+retire_elms([H|R],X,[H|L2]):-
+	X\=H,
+	retire_elms(R,X,L2).
+
+partition(_,[],[],[]).
+partition(X,[Y|Tmp1],[Y|Tmp2],L3):-
+	X>=Y,
+	partition(X,Tmp1,Tmp2,L3).
+partition(X,[Y|Tmp1],L2,[Y|Tmp3]):-
+	X<Y,
+	partition(X,Tmp1,L2,[Y|Tmp3).
+
+tri([],[]).
+tri([T|Tmp],L2):-
+	partition(T,Tmp,Tmp1,Tmp2),
+	tri(Tmp1,MT1),
+	tri(Tmp2,LT2),
+	concat(LT1,[T|LT2], L2).
+
+retire_doublons([], []).
+retire_doublons([H|T], E) :-
+    element(H, T),
+    retire_doublons(T, E).
+retire_doublons([H|T], [H|E]) :-
+    retire_doublons(T, E).
+
+
+union([], E, E).
+union([H|T], E2, E) :-
+    element(H, E2),
+    union(T, E2, E).
+union([H|T], E2, [H|E]) :-
+    union(T, E2, E).
+
+intersection([], _, []).
+intersection([H|T], E2, [H|E]) :-
+    element(H, E2),
+    intersection(T, E2, E).
+intersection([_|T], E2, E) :-
+    intersection(T, E2, E).
+
+%--- td3 -----------
