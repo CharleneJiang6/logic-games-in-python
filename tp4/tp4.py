@@ -47,7 +47,7 @@ GRID_5: Grid = ((X, 0, 0), (X, X, O), (0, 0, X))
 # (X, X, O),
 # (0, 0, 0))
 
-GRID_6: Grid = ((X, O, O), (X, 0, O), (X, 0, X))
+GRID_6: Grid = ((X, O, O), (O, 0, O), (X, 0, X))
 
 
 def grid_tuple_to_grid_list(grid: Grid) -> list[list[int]]:
@@ -129,6 +129,7 @@ def pprint(grid: State):
             elif cell in (O, 2):
                 print("O", end=" ")
         print()
+    print()
 
 
 # pprint(GRID_6)
@@ -216,9 +217,87 @@ def strategy_random(grid: State, player: Player) -> Action:
     # return random.choices(actions)
 
 
-### MIN MAX ###
+def next_player(player: Player) -> Player:
+    if player == X:
+        return O
+    return X
 
 
+####################### MIN MAX ##########################
+
+
+# def memoize(
+#         f: Callable[[State, Player], tuple[Score, Action]]
+# ) -> Callable[[State, Player], tuple[Score, Action]]:
+#     cache = {}  # closure
+#
+#     def g(state: State, player: Player):
+#         if state in cache:
+#             return cache[state]
+#
+#         val = f(state, player)
+#         cache[state] = val
+#         return val
+#
+#     return g
+
+
+def memoize(f: Callable) -> Callable:
+    cache = {}
+
+    def g(*args):
+        if args in cache:
+            return cache[args]
+        val = f(*args)
+        cache[args] = val
+        return val
+
+    return g
+
+
+def symetries(grid: Grid) -> list[Grid]:
+    """grilles symétriques (rotations et miroirs)"""
+    grids = []
+    g = grid
+    for _ in range(4):  # 4 rotations (0°, 90°, 180°, 270°)
+        grids.append(g)
+        grids.append(tuple(row[::-1] for row in g))  # miroir horizontal
+        # Rotation de 90°
+        g = tuple(zip(*g[::-1]))
+    return grids
+
+
+def min_sym(grid):
+    return min(symetries(grid))
+
+
+def memoize_symmetry(f):
+    cache = {}
+
+    def g(grid, *args):
+        key = (min_sym(grid),) + args
+        if key in cache:
+            return cache[key]
+        val = f(grid, *args)
+        cache[key] = val
+        return val
+
+    return g
+
+
+def evaluation(grid: State, player: Player) -> Score:
+    adversaire = 'O' if player == 'X' else 'X'
+
+    # Si le joueur courant gagne
+    if line(grid, player):
+        return 100
+    # Si l’adversaire gagne
+    if line(grid, adversaire):
+        return -100
+    return 0
+
+
+@memoize
 def minmax(grid: State, player: Player) -> Score:
     """avec l'etat courant du jeu, donne le meilleur score possible"""
     if final(grid):
@@ -241,11 +320,39 @@ def minmax(grid: State, player: Player) -> Score:
 # print((minmax(GRID_0,X))) # match nul si joeurs normaux
 # print((minmax(GRID_6, O)))  # oui, gain pour X : res = 1
 
+@memoize
+def alphabeta(grid: State, player: Player, alpha: Score, beta: Score) -> Score:
+    """avec l'etat courant du jeu, donne le meilleur score possible"""
+    if final(grid):
+        return score(grid)
 
+    if player == X:  # Maximizing player
+        value = -math.inf
+        for action in legals(grid):
+            g = play(grid, X, action)
+            value = max(value, alphabeta(g, O, alpha, beta))
+            alpha = max(alpha, value)
+            if alpha >= beta:
+                break  # beta cut
+        return value
+    else:  # Minimizing player
+        value = math.inf
+        for action in legals(grid):
+            g = play(grid, O, action)
+            value = min(value, alphabeta(g, X, alpha, beta))
+            beta = min(beta, value)
+            if alpha >= beta:
+                break  # alpha cut
+        return value
+
+
+# print(alphabeta(EMPTY_GRID, X, -math.inf, math.inf))
+
+@memoize
 def minmax_depth(grid: State, player: Player, depth=9) -> Score:
     """avec l'etat courant du jeu, donne le meilleur score possible, en limitant la profondeur de recherche"""
     if depth == 0 or final(grid):
-        return score(grid)
+        return score(grid)  # ou evaluation
 
     if player == X:  # X, maximizing player
         value = -math.inf
@@ -264,15 +371,39 @@ def minmax_depth(grid: State, player: Player, depth=9) -> Score:
 # print(minmax_depth(GRID_0, O, depth=3))
 # print(minmax_depth(GRID_6, X, depth=3)) # meme resultat que minmax mais + rapide
 
-# TODO : BONUS
-def evaluation(grid: State, player: Player) -> Score:
-    """pre """
-    pass
+@memoize
+def alphabeta_depth(grid: State, player: Player, alpha: Score, beta: Score, depth=9) -> Score:
+    """avec l'etat courant du jeu, donne le meilleur score possible"""
+    if depth == 0 or final(grid):
+        return score(grid)
+
+    if player == X:  # Maximizing player
+        value = -math.inf
+        for action in legals(grid):
+            g = play(grid, X, action)
+            value = max(value, alphabeta_depth(g, O, alpha, beta, depth - 1))
+            alpha = max(alpha, value)
+            if alpha >= beta:
+                break  # beta cut
+        return value
+    else:  # Minimizing player
+        value = math.inf
+        for action in legals(grid):
+            g = play(grid, O, action)
+            value = min(value, alphabeta_depth(g, X, alpha, beta, depth - 1))
+            beta = min(beta, value)
+            if alpha >= beta:
+                break  # alpha cut
+        return value
 
 
+# print(alphabeta_depth(EMPTY_GRID, X, -math.inf, math.inf, 5))
+
+
+@memoize
 def minmax_eval(grid: State, player: Player, depth: int = 9) -> Score:
     """
-    fonction d'évaluation: au lieu d'appeler score(), on evalue l'état pour estimer sa veleur
+    fonction d'évaluation : au lieu d'appeler score(), on evalue l'état pour estimer sa veleur
     """
     if depth == 0 or final(grid):
         return evaluation(grid, player)  # Utilise la fonction d’évaluation
@@ -291,7 +422,7 @@ def minmax_eval(grid: State, player: Player, depth: int = 9) -> Score:
         return value
 
 
-# https://papers-100-lines.medium.com/the-minimax-algorithm-and-alpha-beta-pruning-tutorial-in-30-lines-of-python-code-e4a3d97fa144
+@memoize
 def minmax_action(grid: State, player: Player, depth: int = 9) -> tuple[Score, Action]:
     """en plus du score optimal, donne l'action qui a permis d'y parvenir"""
 
@@ -300,10 +431,8 @@ def minmax_action(grid: State, player: Player, depth: int = 9) -> tuple[Score, A
 
     best_action: tuple[int, int] = (-1, -1)
 
-    print("là")
     if player == X:  # X, maximizing Player
         value = -math.inf
-        print(legals(grid))
         for action in legals(grid):
             g = play(grid, X, action)
             v = minmax_action(g, O, depth - 1)[0]  # on prend le score du retour
@@ -317,83 +446,174 @@ def minmax_action(grid: State, player: Player, depth: int = 9) -> tuple[Score, A
         for action in legals(grid):
             g = play(grid, O, action)
             v = minmax_action(g, X, depth - 1)[0]  # on prend le score du retour
-            if v < value: # on veut petite valeur
+            if v < value:  # on veut petite valeur
                 best_action = action
                 value = v
         return value, best_action
 
 
-pprint(GRID_6)
-print(minmax_action(GRID_6, X))
+# pprint(GRID_6)
+# print(minmax_action(GRID_6, O))
+# pprint(GRID_2)
+# print(minmax_action(GRID_2, X))
 
 
-# TODO : quelle depth par defaut choisir?
 def strategy_minmax(grid: State, player: Player) -> Action:
-    return minmax_action(grid, player, 5)[0]
+    """retourne l'action qui permet d'arriver au score optimal"""
+    return minmax_action(grid, player)[1]
 
 
-def minmax_actions(
-        grid: State, player: Player, depth: int = 0
-) -> tuple[Score, list[Action]]:
-    # action: tuple[int,int] = None
-    actions = []
+@memoize
+def alphabeta_action(
+        grid: State, player: Player, depth: int = 9, alpha: float = -math.inf, beta: float = math.inf
+) -> tuple[Score, Action]:
+    """retourne score optimal et action qui y mène"""
+
     if depth == 0 or final(grid):
-        return score(grid), []
+        return score(grid), (-1, -1)
 
-    if player == X:  # X, maximizing Player
+    best_action = (-1, -1)
+
+    if player == X:  # Maximizing
         value = -math.inf
         for action in legals(grid):
-            v = minmax_action(action, O, depth - 1)[0]  # on prend le score du retour
+            g = play(grid, X, action)
+            v, _ = alphabeta_action(g, O, depth - 1, alpha, beta)
             if v > value:
-                actions.append(action)
                 value = v
-        return value, actions
-
-    else:  # O, minimizing Player
-        value = math.inf
-        for action in legals(grid):
-            v = minmax_action(action, X, depth - 1)[0]  # on prend le score du retour
-            if v > value:
-                actions.append(action)
-                value = v
-        return value, actions
-
-
-# TODO : cest quoi minmax indeterministe ??
-def strategy_minmax_random(grid: State, player: Player) -> Action:
-    pass
-
-
-# TODO : ajout cache
-
-
-# alpha beta
-def alphabeta(grid: State, player: Player, alpha=-math.inf, beta=math.inf) -> Score:
-    if final(grid):
-        return score(grid)
-
-    if player == X:  # X, maximizing Player
-        value = -math.inf
-        for action in legals(grid):  # liste d'actions !! ensuite faut les jouer
-            g = play(grid, player, action)
-            value = max(value, alphabeta(g, alpha, beta, O))
+                best_action = action
             alpha = max(alpha, value)
             if alpha >= beta:
                 break
-        return value
+        return value, best_action
 
-    else:  # O, minimizing Player
-        for action in legals(grid):  # liste d'actions !! ensuite faut les jouer
-            g = play(grid, player, action)
-            value = min(value, alphabeta(g, alpha, beta, X))
-            alpha = min(alpha, value)
-            if alpha >= beta:
+    else:  # Minimizing
+        value = math.inf
+        for action in legals(grid):
+            g = play(grid, O, action)
+            v, _ = alphabeta_action(g, X, depth - 1, alpha, beta)
+            if v < value:
+                value = v
+                best_action = action
+            beta = min(beta, value)
+            if beta <= alpha:
                 break
-        return value
+        return value, best_action
 
 
-# TODO bonue: alpha beta avec depth
+# print(alphabeta_action(EMPTY_GRID,X))
 
+def strategy_alphabeta(grid: State, player: Player) -> Action:
+    """retourne l'action qui permet d'arriver au score optimal"""
+    return alphabeta_action(grid, player)[1]
+
+
+@memoize
+def minmax_actions(grid: State, player: Player, depth: int = 9) -> tuple[Score, list[Action]]:
+    """renvoie le score optimal et la liste des actions menant a ce score optimal"""
+    if final(grid) or depth == 0:
+        return score(grid), []
+
+    actions: list[Action] = legals(grid)
+    best_score: float = None
+    best_actions: list[Action] = []
+
+    if player == X:  # maximizing
+        best_score = -math.inf
+        for action in actions:
+            g = play(grid, X, action)
+            v, _ = minmax_actions(g, O, depth - 1)
+            if v > best_score:
+                best_score = v  # mettre a jour la meilleure valeur
+                best_actions = [action]
+            elif v == best_score:
+                best_actions.append(action)
+        return best_score, best_actions
+
+    else:  # minimizing
+        best_score = math.inf
+        for action in actions:
+            g = play(grid, O, action)
+            v, _ = minmax_actions(g, X, depth - 1)
+            if v < best_score:
+                best_score = v
+                best_actions = [action]
+            elif v == best_score:
+                best_actions.append(action)
+        return best_score, best_actions
+
+
+# pprint(EMPTY_GRID)
+# print(minmax_actions(EMPTY_GRID, player=X)) # toutes les positions sont optimales
+# pprint(GRID_6)
+# print(minmax_actions(GRID_6, player=X)) # toutes les positions sont optimales
+
+
+def strategy_minmax_random(grid: State, player: Player) -> Action:
+    """minmax indeterministe : choisit aleatoirement parmi les actions optimales"""
+    _, actions = minmax_actions(grid, player)
+    if not actions:
+        return (-1, -1)  # aucun coup possible
+    return random.choice(actions)
+
+
+# print(strategy_minmax_random(EMPTY_GRID, X))
+
+@memoize
+def alphabeta_actions(
+        grid: State,
+        player: Player,
+        depth: int = 9,
+        alpha: float = -math.inf,
+        beta: float = math.inf
+) -> tuple[Score, list[Action]]:
+    """renvoie le score optimal et la liste des actions menant à ce score optimal, avec élagage alpha-bêta."""
+    if final(grid) or depth == 0:
+        return score(grid), []
+
+    actions = legals(grid)
+    best_actions = []
+
+    if player == X:  # Maximizing
+        best_score = -math.inf
+        for action in actions:
+            g = play(grid, X, action)
+            v, _ = alphabeta_actions(g, O, depth - 1, alpha, beta)
+            if v > best_score:
+                best_score = v
+                best_actions = [action]
+            elif v == best_score:
+                best_actions.append(action)
+            alpha = max(alpha, best_score)
+            if alpha >= beta:
+                break  # Beta cut-off
+        return best_score, best_actions
+
+    else:  # Minimizing
+        best_score = math.inf
+        for action in actions:
+            g = play(grid, O, action)
+            v, _ = alphabeta_actions(g, X, depth - 1, alpha, beta)
+            if v < best_score:
+                best_score = v
+                best_actions = [action]
+            elif v == best_score:
+                best_actions.append(action)
+            beta = min(beta, best_score)
+            if beta <= alpha:
+                break  # Alpha cut-off
+        return best_score, best_actions
+
+
+def strategy_alphabeta_random(grid: State, player: Player) -> Action:
+    """alphabeta indeterministe : choisit aleatoirement parmi les actions optimales"""
+    _, actions = alphabeta_actions(grid, player)
+    if not actions:
+        return (-1, -1)  # aucun coup possible
+    return random.choice(actions)
+
+
+tictactoe(strategy_alphabeta_random, strategy_first_legal, True)
 
 # TESTS ====
 m = ((0, 0, 0), (0, 0, 0), (0, 0, 0))
