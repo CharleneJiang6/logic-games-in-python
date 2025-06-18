@@ -264,13 +264,13 @@ def minmax_depth(grid: State, player: Player, depth=9) -> Score:
 # print(minmax_depth(GRID_0, O, depth=3))
 # print(minmax_depth(GRID_6, X, depth=3)) # meme resultat que minmax mais + rapide
 
-# TODO !!
+# TODO : BONUS
 def evaluation(grid: State, player: Player) -> Score:
     """pre """
     pass
 
 
-def minmax_eval(grid: State, player: Player, depth=9) -> Score:
+def minmax_eval(grid: State, player: Player, depth: int = 9) -> Score:
     """
     fonction d'évaluation: au lieu d'appeler score(), on evalue l'état pour estimer sa veleur
     """
@@ -281,40 +281,50 @@ def minmax_eval(grid: State, player: Player, depth=9) -> Score:
         value = -math.inf
         for action in legals(grid):
             g = play(grid, X, action)
-            value = max(value, minmax_eval(g, O, depth-1))
+            value = max(value, minmax_eval(g, O, depth - 1))
         return value
     else:  # Minimizing
         value = math.inf
         for action in legals(grid):
             g = play(grid, O, action)
-            value = min(value, minmax_eval(g, X, depth-1))
+            value = min(value, minmax_eval(g, X, depth - 1))
         return value
 
 
-
 # https://papers-100-lines.medium.com/the-minimax-algorithm-and-alpha-beta-pruning-tutorial-in-30-lines-of-python-code-e4a3d97fa144
-def minmax_action(grid: State, player: Player, depth: int = 0) -> tuple[Score, Action]:
-    # action: tuple[int,int] = None
+def minmax_action(grid: State, player: Player, depth: int = 9) -> tuple[Score, Action]:
+    """en plus du score optimal, donne l'action qui a permis d'y parvenir"""
+
     if depth == 0 or final(grid):
         return score(grid), (-1, -1)
 
+    best_action: tuple[int, int] = (-1, -1)
+
+    print("là")
     if player == X:  # X, maximizing Player
         value = -math.inf
+        print(legals(grid))
         for action in legals(grid):
-            v = minmax_action(action, O, depth - 1)[0]  # on prend le score du retour
+            g = play(grid, X, action)
+            v = minmax_action(g, O, depth - 1)[0]  # on prend le score du retour
             if v > value:
-                bestAction = action
+                best_action = action
                 value = v
-        return value, bestAction
+        return value, best_action
 
     else:  # O, minimizing Player
         value = math.inf
         for action in legals(grid):
-            v = minmax_action(action, X, depth - 1)[0]  # on prend le score du retour
-            if v > value:
-                bestAction = action
+            g = play(grid, O, action)
+            v = minmax_action(g, X, depth - 1)[0]  # on prend le score du retour
+            if v < value: # on veut petite valeur
+                best_action = action
                 value = v
-        return value, bestAction
+        return value, best_action
+
+
+pprint(GRID_6)
+print(minmax_action(GRID_6, X))
 
 
 # TODO : quelle depth par defaut choisir?
