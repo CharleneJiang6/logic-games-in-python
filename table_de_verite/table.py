@@ -1,4 +1,5 @@
 from typing import Generator, List
+import ast
 
 
 def decomp(n: int, nb_bits: int) -> list[bool]:
@@ -15,7 +16,7 @@ def decomp(n: int, nb_bits: int) -> list[bool]:
 
 def interpretation(voc: list[str], vals: list[bool]) -> dict[str, bool]:
     if len(voc) != len(vals):
-        raise ValueError("Les deux arguments doivent etre de meme longuers.")
+        raise ValueError("Les deux arguments doivent entre de meme longueurs.")
 
     dico: dict[str, bool] = {}
     for i in range(len(voc)):
@@ -31,17 +32,8 @@ def gen_interpretations(voc: list[str]) -> Generator[dict[str, bool], None, None
         i += 1
 
 
-# def my_range(n: int):
-#     i = 0
-#     while i < n:
-#         yield i
-#         i += 1
-
-
 def valuate(formula: str, interpretation: dict[str, bool]) -> bool:
-    """evalue la formule avec les valeurs de verite pour chaque variable dans la formule"""
-    # evalue une chaine de caractere qui represente une expression
-    # les valeurs sont a remplacees par celle dans le dico
+    """revalue la formule avec les valeurs de verite pour chaque variable dans la formule"""
     return eval(formula, interpretation)
 
 
@@ -99,37 +91,26 @@ def is_cons(f1: str, f2: str, voc: List[str]) -> bool:
 
 
 def main():
-    # print(decomp(7,3))
-    # interpretation(["A", "B", "C"],[True, True, False])
-
-    # ran=my_range(5)
-    # print(next(ran))
-    # print(next(ran))
-
-    # for i in gen_interpretations(["toto", "tutu"]):
-    #     print(i)
-
-    # g = gen_interpretations(["A", "B", "C"])
-    # for i in g:
-    #     print(i)
-
-    # valuate("(A or B) and not(C)", next(g))
-
-    # print(valuate("(A or B) and not(C)", {"A": True, "B": False, "C": False}))
-
-    # table("(A or B) and not(C) or D", ["A", "B", "C", 'D'])
-
-    # TEST Q6: valide/contradictoire/contigent
-    # print(contingente("(A or B) and not(C)", ["A", "B", "C"]))
-    # print(valide("A or not A", ["A"]))
-    # print(contradictoire("A and not A", ["A"]))
-
-    # print(valide("x1 or not x1",[f"x{i}" for i in range(20)]))
-    # prend beaucoup plus de temps que si on donnait juste 1 variable
-
-    pass
+    print("=== Table de vérité ===")
+    try:
+        formule = input("Saisir une formule logique (ex : A and not B or C) : ").strip()
+        vocab_str = input("Saisir les variables séparées par des virgules (ex : A,B,C) : ").strip()
+        vocab = [v.strip() for v in vocab_str.split(",") if v.strip()]
+        if not formule or not vocab:
+            print("Erreur : formule ou vocabulaire vide.")
+            return
+        table(formule, vocab)
+        print()
+        print("La formule est :")
+        if valide(formule, vocab):
+            print("  - valide (tautologie)")
+        elif contradictoire(formule, vocab):
+            print("  - contradictoire (toujours fausse)")
+        else:
+            print("  - contingente (ni toujours vraie ni toujours fausse)")
+    except Exception as e:
+        print(f"Erreur de saisie ou d'évaluation : {e}")
 
 
 if __name__ == "__main__":
     main()
-    # print("Hello World!")
