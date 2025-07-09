@@ -2,27 +2,6 @@ from typing import List, Tuple, Any  # type: ignore
 import subprocess
 from itertools import combinations
 import math
-from pprint import pprint
-from model import model
-
-# REFLEXIONS
-# 9^3 = 729 cases car pour une case y a 9 possibilites et en tout 9² cases
-# clause at least one : un OU entre toutes les variables
-# clause unique (at most one) : not X OR not Y, tq X!=Y
-# XOR : exactly one = at most AND at least
-# Soit une case (i,j,k) :
-# [1e regle] exact 1 chiffre
-# pour chaque case (i,j), on fait un OU entre tous les (i,j,k)
-# et on fait et OU entre tous les : not (i,j,k) OR not (i,j,m), tq k!=m
-# => exactement UNE valeur pour une case (i,j)
-# [2e regle] (pour chaque chiffre k)
-# un nombre apparait exact 1x par ligne (gros OU + paires de Not)
-# [3e regle] (idem)
-# un nombre apparait exact 1x par colonne (gros OU + paires de Not)
-# [4e regle] (idem)
-# un nb apparait exact une fois par bloc 3x3 :
-
-# SUPPOSONS QUE TOUTES LES VALEURS VONT DE 0 à 8
 
 Grid = List[List[int]]
 PropositionnalVariable = int  # eg: 1
@@ -74,25 +53,16 @@ empty_grid: Grid = [
 def cell_to_variable(i: int, j: int, val: int) -> PropositionnalVariable:
     """i et j sont app. [0,8] ; val app. [1,8]"""
     return i * 9 * 9 + 9 * j + val + 1
-    # return i * 9 * 9 + 9 * j + val
-    # tel que la 1e case correspond a la var 0, mais faudra incrementer qn ecriture dimacs
-
-
-# print(cell_to_variable(0, 0, 0))
-# print(cell_to_variable(1, 3, 4))
 
 
 def variable_to_cell(var: PropositionnalVariable) -> Tuple[int, int, int]:
     """inverse of cell_to_variable"""
-    i = (var - 1) // 81  # cb de lignes ? une ligne fait 9*9 var
-    j = ((var - 1) // 9) % 9  # cb de col ? une col fait 9 var
+    i = (var - 1) // 81
+    j = ((var - 1) // 9) % 9
     v = (var - 1) % 9
 
     return i, j, v
 
-
-# print(variable_to_cell(113))
-# print(variable_to_cell(729))
 
 def model_to_grid(model: Model, nb_vals: int = 9) -> Grid:
     """renvoie un tab 2D représentant la grille complet"""
@@ -104,8 +74,6 @@ def model_to_grid(model: Model, nb_vals: int = 9) -> Grid:
 
     return grid
 
-
-# print(model_to_grid(model))
 
 def at_least_one(variables: List[PropositionnalVariable]) -> Clause:
     return variables
@@ -119,8 +87,6 @@ def unique(variables: List[PropositionnalVariable]) -> ClauseBase:
     return clauses
 
 
-# print(unique([1, 3, 5]))
-
 def create_cell_constraints() -> ClauseBase:
     clauses: ClauseBase = []
     # pour chaque case, recupere toutes ses variables et faire des clauses Unique
@@ -131,8 +97,6 @@ def create_cell_constraints() -> ClauseBase:
 
 
 def create_line_constraints() -> ClauseBase:
-    # [2e regle] (pour chaque chiffre k)
-    # un nombre apparait exact 1x par ligne (gros OU + paires de Not)
     clauses: ClauseBase = []
     for i in range(nb_vals):
         for v in range(nb_vals):  # pour chaque valeur 0 à 8
@@ -159,7 +123,7 @@ def create_box_constraints() -> ClauseBase:
     for box_i in range(box_size):
         for box_j in range(box_size):
 
-            # pour chaque nombre, ca apparait exactement 1x
+            # pour chaque nombre, ça apparait exactement 1 fois
             for v in range(nb_vals):  # pour chaque valeur de 0 à 8
                 variables: List[PropositionnalVariable] = []
                 for i in range(box_i * box_size, box_i * box_size + box_size):  # parcours des lignes dans le box
@@ -173,7 +137,6 @@ def create_box_constraints() -> ClauseBase:
 def create_value_constraints(grid: Grid) -> ClauseBase:
     """ajouter des valeurs predefinies pour des cases"""
     clauses: ClauseBase = []
-    # clauses += create_cell_constraints() + create_line_constraints() + create_column_constraints() + create_box_constraints()
 
     for i in range(9):
         for j in range(9):
@@ -196,7 +159,6 @@ def clauses_to_dimacs(clauses: ClauseBase, nb_vars: int) -> str:
     dimacs: str = ""
     dimacs += f"p cnf {nb_vars} {len(clauses)}\n"
     for clause in clauses:
-        # clause = [lit + 1 if lit >= 0 else -1*(abs(lit)+1) for lit in clause]
         dimacs += " ".join(map(str, clause)) + " 0\n"
     return dimacs
 
@@ -220,7 +182,7 @@ def print_grid(grid: Grid):
     print("-------------------------")
 
 
-def exec_gophersat(filename: str, cmd: str = "/volsme/users/ia02p070/go/bin/gophersat", encoding: str = "utf8") -> Tuple[bool, List[int]]:
+def exec_gophersat(filename: str, cmd: str = "gophersat", encoding: str = "utf8") -> Tuple[bool, List[int]]:
     result = subprocess.run(
         [cmd, filename], capture_output=True, check=True, encoding=encoding
     )
@@ -235,8 +197,6 @@ def exec_gophersat(filename: str, cmd: str = "/volsme/users/ia02p070/go/bin/goph
     return True, [int(x) for x in model]
 
 
-# EMPTY GRID RESOLUTION : verif solution unique : ajouter à KB, liste qui contient la négation de tous les var positif
-
 def resoudre(pb: Grid, fichier: str):
     dimacs_sudoku = clauses_to_dimacs(generate_problem(pb), 729)
     write_dimacs_file(dimacs_sudoku, fichier)
@@ -244,18 +204,15 @@ def resoudre(pb: Grid, fichier: str):
     solution = model_to_grid(model_sudoku)
     print_grid(solution)
 
-resoudre(example, "tp3/example.cnf")
-# resoudre(empty_grid, "tp3/empty_grid.cnf")
 
-
-def solution_unique(pb: Grid, fichier: str)->bool:
+def solution_unique(pb: Grid, fichier: str) -> bool:
     clauses = generate_problem(pb)
     dimacs_sudoku = clauses_to_dimacs(clauses, 729)
     write_dimacs_file(dimacs_sudoku, fichier)
     verite, model_sudoku = exec_gophersat(fichier)
     if not verite:
         return False
-    clauses +=[[-v for v in model_sudoku if v > 0]]
+    clauses += [[-v for v in model_sudoku if v > 0]]
     dimacs_sudoku = clauses_to_dimacs(clauses, 729)
     write_dimacs_file(dimacs_sudoku, fichier)
     verite, model_sudoku = exec_gophersat(fichier)
@@ -263,12 +220,13 @@ def solution_unique(pb: Grid, fichier: str)->bool:
         return True
     return False
 
-# print(solution_unique(example,"unique.cnf")) #unique
-print(solution_unique(empty_grid, "tp3/unique.cnf")) #non unique, cest normal 
 
-# def main():
-#     pass
+def main():
+    # Exemple de résolution d'une grille
+    resoudre(example, "sudoku/example.cnf")
+    # Test d'unicité sur la grille vide
+    print("Solution unique pour la grille vide ?", solution_unique(empty_grid, "sudoku/unique.cnf"))
 
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
