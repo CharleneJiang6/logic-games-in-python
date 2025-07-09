@@ -1,9 +1,8 @@
 from typing import Generator, List
-import ast
 
 
 def decomp(n: int, nb_bits: int) -> list[bool]:
-    """decompose un nombre n de base 10 en base 2 sur nb_bits bits,
+    """Decompose un nombre n de base 10 en base 2 sur nb_bits bits,
     en divisant successivement par 2."""
     bits = []
     while n > 0:
@@ -15,6 +14,7 @@ def decomp(n: int, nb_bits: int) -> list[bool]:
 
 
 def interpretation(voc: list[str], vals: list[bool]) -> dict[str, bool]:
+    """Renvoie un dictionnaire associant chaque variable à une valeur de vérité"""
     if len(voc) != len(vals):
         raise ValueError("Les deux arguments doivent entre de meme longueurs.")
 
@@ -25,20 +25,20 @@ def interpretation(voc: list[str], vals: list[bool]) -> dict[str, bool]:
 
 
 def gen_interpretations(voc: list[str]) -> Generator[dict[str, bool], None, None]:
+    """Génère toutes les interprétations possibles pour l'ensemble du vocabulaire"""
     i = 0
     while i < 2 ** len(voc):
-        # print(len(voc), len(decomp(i,len(voc))))
         yield interpretation(voc, decomp(i, len(voc)))
         i += 1
 
 
 def valuate(formula: str, interpretation: dict[str, bool]) -> bool:
-    """revalue la formule avec les valeurs de verite pour chaque variable dans la formule"""
+    """Value la formule avec les valeurs de verite pour chaque variable dans la formule"""
     return eval(formula, interpretation)
 
 
 def table(formule: str, vocab: list[str]) -> None:
-    """affiche une jolie table"""
+    """Affiche une jolie table"""
     ligne = "+" + "---+" * len(vocab) + "-------+"
 
     # en-tete
@@ -62,7 +62,7 @@ def table(formule: str, vocab: list[str]) -> None:
 
 
 def valide(formula: str, voc: List[str]) -> bool:
-    """la formule est toujours vraie"""
+    """La formule est toujours vraie"""
     for interpretation in gen_interpretations(voc):
         if not valuate(formula, interpretation):
             return False
@@ -70,7 +70,7 @@ def valide(formula: str, voc: List[str]) -> bool:
 
 
 def contradictoire(formula: str, voc: List[str]) -> bool:
-    """la formule est toujours fausse"""
+    """La formule est toujours fausse"""
     for interpretation in gen_interpretations(voc):
         if valuate(formula, interpretation):
             return False
@@ -78,12 +78,12 @@ def contradictoire(formula: str, voc: List[str]) -> bool:
 
 
 def contingente(formula: str, voc: List[str]) -> bool:
-    """la formule est soit vrais, soit faux"""
+    """La formule est soit vrais, soit faux"""
     return not valide(formula, voc) and not contradictoire(formula, voc)
 
 
 def is_cons(f1: str, f2: str, voc: List[str]) -> bool:
-    """si f1 est vraie, forcement f2 est vraie aussi"""
+    """Si f1 est vraie, forcement f2 est vraie aussi"""
     for interpretation in gen_interpretations(voc):
         if valuate(f1, interpretation) and not valuate(f2, interpretation):
             return False
@@ -108,7 +108,7 @@ def main():
             print("  - contradictoire (toujours fausse)")
         else:
             print("  - contingente (ni toujours vraie ni toujours fausse)")
-    except Exception as e:
+    except (SyntaxError, NameError, TypeError, ValueError) as e:
         print(f"Erreur de saisie ou d'évaluation : {e}")
 
 
